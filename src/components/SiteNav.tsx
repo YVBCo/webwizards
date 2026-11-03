@@ -1,12 +1,21 @@
 import { Link } from "@tanstack/react-router";
-import { PawPrint, Menu, X, MapPin, Scissors, User } from "lucide-react";
+import { PawPrint, Menu, X, MapPin, Scissors, User, LogOut, ArrowRightLeft } from "lucide-react";
 import { useState } from "react";
-import { useStore } from "@/lib/store";
+import { useStore, setState } from "@/lib/store";
+import { toast } from "sonner";
 
 export function SiteNav() {
   const [open, setOpen] = useState(false);
   const s = useStore();
   const cls = "px-3.5 py-1.5 rounded-full text-xs font-semibold hover:bg-secondary transition-all duration-200";
+
+  const handleLogout = () => {
+    setState((st) => ({ ...st, currentUser: null }));
+    toast.info("Logged out. Please sign in as Pet Parent or Groomer.");
+  };
+
+  const isParent = s.currentUser?.role === "parent";
+  const isGroomer = s.currentUser?.role === "groomer";
 
   return (
     <header className="fixed top-4 inset-x-0 z-50 flex justify-center px-4">
@@ -30,30 +39,68 @@ export function SiteNav() {
           <Link to="/locations" className={`${cls} flex items-center gap-1`} activeProps={{ className: "bg-secondary font-bold" }}>
             <MapPin className="h-3 w-3 text-accent" /> Find Centers
           </Link>
-          <Link to="/book" search={{ plan: "Spa" }} className={cls} activeProps={{ className: "bg-secondary font-bold" }}>
-            Book
-          </Link>
-          <Link
-            to="/dashboard"
-            className={`${cls} bg-accent/15 text-accent hover:bg-accent/25`}
-            activeProps={{ className: "bg-accent text-accent-foreground font-bold shadow-sm" }}
-          >
-            Pet Parent
-          </Link>
-          <Link
-            to="/groomer"
-            className={`${cls} flex items-center gap-1 bg-primary/10 text-primary hover:bg-primary/20`}
-            activeProps={{ className: "bg-primary text-primary-foreground font-bold shadow-sm" }}
-          >
-            <Scissors className="h-3 w-3" /> Groomer Portal
-          </Link>
-          <Link
-            to="/auth"
-            className="ml-1 inline-flex items-center gap-1 rounded-full bg-primary px-3.5 py-1.5 text-xs font-bold text-primary-foreground shadow-sm transition hover:scale-105 active:scale-95"
-          >
-            <User className="h-3 w-3" />
-            {s.currentUser ? s.currentUser.name.split(" ")[0] : "Sign In"}
-          </Link>
+          
+          {/* ONLY show Book for pet parents or unauthenticated guests */}
+          {!isGroomer && (
+            <Link to="/book" search={{ plan: "Spa" }} className={cls} activeProps={{ className: "bg-secondary font-bold" }}>
+              Book
+            </Link>
+          )}
+
+          {/* ROLE SPECIFIC DASHBOARD LINK: Only show Parent Dashboard to parents */}
+          {isParent && (
+            <Link
+              to="/dashboard"
+              className={`${cls} bg-accent/15 text-accent hover:bg-accent/25`}
+              activeProps={{ className: "bg-accent text-accent-foreground font-bold shadow-sm" }}
+            >
+              🐾 Parent Dashboard
+            </Link>
+          )}
+
+          {/* ROLE SPECIFIC DASHBOARD LINK: Only show Groomer Portal to groomers */}
+          {isGroomer && (
+            <Link
+              to="/groomer"
+              className={`${cls} flex items-center gap-1 bg-primary/10 text-primary hover:bg-primary/20`}
+              activeProps={{ className: "bg-primary text-primary-foreground font-bold shadow-sm" }}
+            >
+              <Scissors className="h-3 w-3" /> 💈 Salon Portal
+            </Link>
+          )}
+
+          {/* If not logged in, show quick links to sign in */}
+          {!s.currentUser ? (
+            <div className="flex items-center gap-1 ml-2">
+              <Link
+                to="/auth"
+                className="inline-flex items-center gap-1 rounded-full bg-accent px-3 py-1.5 text-xs font-bold text-accent-foreground shadow-sm transition hover:scale-105 active:scale-95"
+              >
+                Sign In / Join
+              </Link>
+            </div>
+          ) : (
+            <div className="flex items-center gap-1 ml-2">
+              <Link
+                to="/auth"
+                className="inline-flex items-center gap-1 rounded-full bg-secondary px-3 py-1 text-xs font-bold text-foreground border hover:bg-secondary/80"
+                title="Switch Account"
+              >
+                <ArrowRightLeft className="h-3 w-3 text-accent" />
+                <span className="max-w-[80px] truncate">{s.currentUser.name.split(" ")[0]}</span>
+                <span className="text-[10px] bg-accent/20 text-accent px-1.5 py-0.2 rounded font-bold uppercase">
+                  {s.currentUser.role}
+                </span>
+              </Link>
+              <button
+                onClick={handleLogout}
+                className="rounded-full p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition"
+                title="Sign Out"
+              >
+                <LogOut className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Mobile menu toggle */}
@@ -79,18 +126,27 @@ export function SiteNav() {
             <Link onClick={() => setOpen(false)} to="/locations" className="rounded-xl px-4 py-2.5 hover:bg-secondary transition flex items-center gap-2">
               <MapPin className="h-4 w-4 text-accent" /> Find Centers Map
             </Link>
-            <Link onClick={() => setOpen(false)} to="/book" search={{ plan: "Spa" }} className="rounded-xl px-4 py-2.5 hover:bg-secondary transition">
-              Book Appointment
-            </Link>
-            <Link onClick={() => setOpen(false)} to="/dashboard" className="rounded-xl bg-accent/15 px-4 py-2.5 text-accent font-bold">
-              🐾 Pet Parent Dashboard
-            </Link>
-            <Link onClick={() => setOpen(false)} to="/groomer" className="rounded-xl bg-primary/10 px-4 py-2.5 text-primary font-bold flex items-center gap-2">
-              <Scissors className="h-4 w-4" /> 💈 Groomer Salon Dashboard
-            </Link>
+
+            {!isGroomer && (
+              <Link onClick={() => setOpen(false)} to="/book" search={{ plan: "Spa" }} className="rounded-xl px-4 py-2.5 hover:bg-secondary transition">
+                Book Appointment
+              </Link>
+            )}
+
+            {isParent && (
+              <Link onClick={() => setOpen(false)} to="/dashboard" className="rounded-xl bg-accent/15 px-4 py-2.5 text-accent font-bold">
+                🐾 Pet Parent Dashboard
+              </Link>
+            )}
+
+            {isGroomer && (
+              <Link onClick={() => setOpen(false)} to="/groomer" className="rounded-xl bg-primary/10 px-4 py-2.5 text-primary font-bold flex items-center gap-2">
+                <Scissors className="h-4 w-4" /> 💈 Groomer Salon Portal
+              </Link>
+            )}
+
             <Link onClick={() => setOpen(false)} to="/auth" className="mt-2 rounded-xl bg-primary px-4 py-3 text-center text-primary-foreground font-bold shadow-md">
-              <User className="h-4 w-4 inline mr-1" />
-              {s.currentUser ? `Signed in as ${s.currentUser.name}` : "Sign In or Register"}
+              {s.currentUser ? `Switch Profile (${s.currentUser.role.toUpperCase()})` : "Sign In / Register"}
             </Link>
           </div>
         </div>

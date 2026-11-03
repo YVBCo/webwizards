@@ -128,6 +128,32 @@ function Index() {
               </Link>
             </div>
 
+            {/* Direct Login & Sign Up Options on Landing Page */}
+            <div className="mt-8 rounded-3xl bg-card/90 backdrop-blur p-4 border border-border/70 shadow-sm max-w-md">
+              <div className="flex items-center justify-between mb-2.5">
+                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  Quick Portal Access
+                </p>
+                <Link to="/auth" className="text-xs font-bold text-accent hover:underline">
+                  Sign In / Register →
+                </Link>
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <Link
+                  to="/auth"
+                  className="rounded-2xl bg-accent/15 p-3 text-center font-bold text-accent transition hover:bg-accent hover:text-accent-foreground hover:scale-[1.02]"
+                >
+                  🐾 Pet Parent Portal
+                </Link>
+                <Link
+                  to="/auth"
+                  className="rounded-2xl bg-primary/10 p-3 text-center font-bold text-primary transition hover:bg-primary hover:text-primary-foreground hover:scale-[1.02]"
+                >
+                  💈 Grooming Salon Portal
+                </Link>
+              </div>
+            </div>
+
             {/* Quick trust stats */}
             <div className="mt-10 flex gap-6 text-sm">
               <div className="flex items-center gap-2 text-muted-foreground">

@@ -230,6 +230,39 @@ function GroomerDashboard() {
     toast.success(`🐾 Walk-in pet "${walkinPetName}" added to the active grooming queue!`);
   };
 
+  // Role Guard: Pet Parents cannot access Groomer Salon portal
+  if (s.currentUser?.role === "parent") {
+    return (
+      <div className="min-h-screen bg-hero">
+        <SiteNav />
+        <main className="mx-auto max-w-2xl px-6 pt-40 pb-20 text-center">
+          <div className="rounded-3xl bg-card p-10 shadow-3d border-2 border-accent/30">
+            <div className="text-6xl mb-4">🐾</div>
+            <h1 className="text-3xl font-black">Pet Parent Account Detected</h1>
+            <p className="mt-3 text-muted-foreground text-sm">
+              You are currently signed in as <strong>{s.currentUser.name}</strong> (Pet Parent).
+              The Grooming Salon Portal and station controls are reserved for verified grooming centers.
+            </p>
+            <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
+              <Link
+                to="/dashboard"
+                className="rounded-full bg-accent px-6 py-3 font-bold text-accent-foreground shadow-md hover:scale-105 transition"
+              >
+                Go to Pet Parent Dashboard →
+              </Link>
+              <Link
+                to="/auth"
+                className="rounded-full border-2 border-accent px-6 py-3 font-bold text-accent hover:bg-secondary transition"
+              >
+                Switch to Groomer Salon Login
+              </Link>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-hero">
       <SiteNav />

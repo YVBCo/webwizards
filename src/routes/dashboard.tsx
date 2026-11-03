@@ -176,6 +176,39 @@ function Dashboard() {
     toast.success("Health passport record updated!");
   };
 
+  // Role Guard: Groomers cannot access Pet Parent dashboard
+  if (s.currentUser?.role === "groomer") {
+    return (
+      <div className="min-h-screen bg-hero">
+        <SiteNav />
+        <main className="mx-auto max-w-2xl px-6 pt-40 pb-20 text-center">
+          <div className="rounded-3xl bg-card p-10 shadow-3d border-2 border-primary/30">
+            <div className="text-6xl mb-4">💈</div>
+            <h1 className="text-3xl font-black">Grooming Salon Account Detected</h1>
+            <p className="mt-3 text-muted-foreground text-sm">
+              You are currently signed in as <strong>{s.currentUser.name}</strong> (Grooming Salon Manager).
+              The Pet Parent dashboard is reserved for pet parents.
+            </p>
+            <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
+              <Link
+                to="/groomer"
+                className="rounded-full bg-primary px-6 py-3 font-bold text-primary-foreground shadow-md hover:scale-105 transition"
+              >
+                Go to Groomer Salon Portal →
+              </Link>
+              <Link
+                to="/auth"
+                className="rounded-full border-2 border-primary px-6 py-3 font-bold text-primary hover:bg-secondary transition"
+              >
+                Switch to Pet Parent Login
+              </Link>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-hero">
       <SiteNav />
