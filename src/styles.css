@@ -71,16 +71,80 @@
   * { border-color: var(--color-border); }
   body { background-color: var(--color-background); color: var(--color-foreground); font-family: var(--font-sans); }
   h1, h2, h3 { font-family: var(--font-display); }
+  ::selection { background: color-mix(in oklab, var(--accent) 30%, transparent); }
 }
 
 @utility bg-hero { background-image: var(--gradient-hero); }
 @utility shadow-3d { box-shadow: var(--shadow-3d); }
 @utility preserve-3d { transform-style: preserve-3d; }
 
+/* glass effect */
+@utility glass {
+  background: oklch(0.99 0.01 85 / 0.6);
+  backdrop-filter: blur(20px) saturate(1.5);
+  -webkit-backdrop-filter: blur(20px) saturate(1.5);
+}
+
+/* shimmer text sweep */
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+@utility text-shimmer {
+  background: linear-gradient(
+    120deg,
+    var(--foreground) 30%,
+    var(--accent) 50%,
+    var(--foreground) 70%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer 4s ease-in-out infinite;
+}
+
+/* pulsing glow ring behind CTA */
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 20px 4px color-mix(in oklab, var(--accent) 50%, transparent); }
+  50%  { box-shadow: 0 0 40px 10px color-mix(in oklab, var(--accent) 30%, transparent); }
+}
+@utility glow-cta {
+  animation: glow-pulse 2.5s ease-in-out infinite;
+}
+
+/* kenburns subtle zoom for hero image */
+@keyframes kenburns {
+  0% { transform: scale(1) translateY(0) rotate(-3deg); }
+  50% { transform: scale(1.06) translateY(-14px) rotate(3deg); }
+  100% { transform: scale(1) translateY(0) rotate(-3deg); }
+}
+@utility animate-kenburns { animation: kenburns 8s ease-in-out infinite; }
+
+/* floating badge wiggle */
+@keyframes wiggle {
+  0%,100% { transform: translateZ(100px) rotate(-2deg); }
+  50% { transform: translateZ(100px) rotate(2deg) translateY(-6px); }
+}
+@utility animate-wiggle { animation: wiggle 3s ease-in-out infinite; }
+
 @keyframes floaty { 0%,100% { transform: translateY(0) rotate(-3deg); } 50% { transform: translateY(-18px) rotate(3deg); } }
 @keyframes spin3d { from { transform: rotateX(-20deg) rotateY(0); } to { transform: rotateX(-20deg) rotateY(360deg); } }
 @keyframes bubble { 0% { transform: translateY(0) scale(.6); opacity: 0; } 20% { opacity: .8; } 100% { transform: translateY(-110vh) scale(1.2); opacity: 0; } }
 @keyframes marquee { to { transform: translateX(-50%); } }
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@utility animate-fade-up { animation: fade-up 0.7s ease-out both; }
+
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+@utility animate-scale-in { animation: scale-in 0.5s ease-out both; }
+
 @utility animate-floaty { animation: floaty 6s ease-in-out infinite; }
 @utility animate-spin3d { animation: spin3d 14s linear infinite; }
 @utility animate-marquee { animation: marquee 25s linear infinite; }
@@ -90,3 +154,17 @@
   border: 1px solid oklch(1 0 0 / .6);
   animation: bubble linear infinite;
 }
+
+/* Smooth page transitions */
+@view-transition {
+  navigation: auto;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: color-mix(in oklab, var(--primary) 30%, transparent); border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: color-mix(in oklab, var(--primary) 50%, transparent); }
+
+/* Smooth scroll */
+html { scroll-behavior: smooth; }

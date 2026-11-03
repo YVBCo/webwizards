@@ -10,13 +10,21 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthRouteImport } from './routes/auth'
 import { Route as BookRouteImport } from './routes/book'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as GroomerRouteImport } from './routes/groomer'
+import { Route as LocationsRouteImport } from './routes/locations'
 import { Route as ServicesRouteImport } from './routes/services'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BookRoute = BookRouteImport.update({
@@ -29,6 +37,16 @@ const DashboardRoute = DashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
+const GroomerRoute = GroomerRouteImport.update({
+  id: '/groomer',
+  path: '/groomer',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LocationsRoute = LocationsRouteImport.update({
+  id: '/locations',
+  path: '/locations',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ServicesRoute = ServicesRouteImport.update({
   id: '/services',
   path: '/services',
@@ -37,35 +55,69 @@ const ServicesRoute = ServicesRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
   '/book': typeof BookRoute
   '/dashboard': typeof DashboardRoute
+  '/groomer': typeof GroomerRoute
+  '/locations': typeof LocationsRoute
   '/services': typeof ServicesRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
   '/book': typeof BookRoute
   '/dashboard': typeof DashboardRoute
+  '/groomer': typeof GroomerRoute
+  '/locations': typeof LocationsRoute
   '/services': typeof ServicesRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
   '/book': typeof BookRoute
   '/dashboard': typeof DashboardRoute
+  '/groomer': typeof GroomerRoute
+  '/locations': typeof LocationsRoute
   '/services': typeof ServicesRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/book' | '/dashboard' | '/services'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/book'
+    | '/dashboard'
+    | '/groomer'
+    | '/locations'
+    | '/services'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/book' | '/dashboard' | '/services'
-  id: '__root__' | '/' | '/book' | '/dashboard' | '/services'
+  to:
+    | '/'
+    | '/auth'
+    | '/book'
+    | '/dashboard'
+    | '/groomer'
+    | '/locations'
+    | '/services'
+  id:
+    | '__root__'
+    | '/'
+    | '/auth'
+    | '/book'
+    | '/dashboard'
+    | '/groomer'
+    | '/locations'
+    | '/services'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthRoute: typeof AuthRoute
   BookRoute: typeof BookRoute
   DashboardRoute: typeof DashboardRoute
+  GroomerRoute: typeof GroomerRoute
+  LocationsRoute: typeof LocationsRoute
   ServicesRoute: typeof ServicesRoute
 }
 
@@ -76,6 +128,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/book': {
@@ -92,6 +151,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/groomer': {
+      id: '/groomer'
+      path: '/groomer'
+      fullPath: '/groomer'
+      preLoaderRoute: typeof GroomerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/locations': {
+      id: '/locations'
+      path: '/locations'
+      fullPath: '/locations'
+      preLoaderRoute: typeof LocationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/services': {
       id: '/services'
       path: '/services'
@@ -104,8 +177,11 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthRoute: AuthRoute,
   BookRoute: BookRoute,
   DashboardRoute: DashboardRoute,
+  GroomerRoute: GroomerRoute,
+  LocationsRoute: LocationsRoute,
   ServicesRoute: ServicesRoute,
 }
 export const routeTree = rootRouteImport
