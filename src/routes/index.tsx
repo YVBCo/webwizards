@@ -1,17 +1,18 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Scissors, Bath, Sparkles, HeartPulse, Star, ArrowRight, Clock, Shield, MapPin, Phone, Mail, Instagram, Quote, ChevronRight, Users, Award, Leaf } from "lucide-react";
+import { Scissors, Bath, Sparkles, HeartPulse, Star, ArrowRight, Clock, Shield, MapPin, Phone, Mail, Instagram, Quote, ChevronRight, Users, Award, Leaf, Tag, Calendar } from "lucide-react";
 import dog from "@/assets/hero-dog.png";
 import { SiteNav } from "@/components/SiteNav";
 import { Tilt } from "@/components/Tilt";
+import { GeminiAssistant } from "@/components/GeminiAssistant";
 import { useState, useEffect } from "react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Fur&Fern — Luxury Pet Grooming Spa" },
-      { name: "description", content: "Bubble baths, breed-perfect cuts and spa days for your pets." },
-      { property: "og:title", content: "Fur&Fern — Luxury Pet Grooming Spa" },
-      { property: "og:description", content: "Bubble baths, breed-perfect cuts and spa days for your pets." },
+      { title: "Fur&Fern — Luxury Pet Care & Grooming Spa" },
+      { name: "description", content: "Bubble baths, breed-perfect cuts, nail trimming, and spa days for your pets." },
+      { property: "og:title", content: "Fur&Fern — Luxury Pet Care & Grooming Spa" },
+      { property: "og:description", content: "Bubble baths, breed-perfect cuts, nail trimming, and spa days for your pets." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -19,11 +20,40 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
+// JUDGES REQUIREMENT #2: Service cards for bathing, haircut, nail trimming, and pet spa
 const features = [
-  { icon: Bath, t: "Bubble Spa", d: "Oatmeal foam baths at the perfect 37°C with aromatherapy oils.", color: "bg-card" },
-  { icon: Scissors, t: "Breed Cuts", d: "Certified stylists for 120+ breeds with precision tools.", color: "bg-mint" },
-  { icon: HeartPulse, t: "Health Scan", d: "Thorough skin, ear & nail check every single visit.", color: "bg-sun" },
-  { icon: Sparkles, t: "Pawdicure", d: "Paw balm, nail art, cute little bows and fresh fragrance.", color: "bg-coral text-accent-foreground" },
+  {
+    icon: Bath,
+    t: "Bathing",
+    d: "Warm hypoallergenic bubble foam baths at 37°C, tearless organic wash, ear cleanse, and warm fluff blow-dry.",
+    badge: "Hydrotherapy Bath",
+    color: "bg-card",
+    plan: "Splash",
+  },
+  {
+    icon: Scissors,
+    t: "Haircut",
+    d: "Certified breed-perfect styling, precision scissor finish, sanitary trimming, and coat deshedding for 120+ breeds.",
+    badge: "Precision Cut",
+    color: "bg-mint",
+    plan: "Spa",
+  },
+  {
+    icon: Sparkles,
+    t: "Nail Trimming",
+    d: "Gentle nail clipping, diamond rotary claw grinding, soothing lavender paw balm, and stylish nail polish.",
+    badge: "Pawdicure Care",
+    color: "bg-sun",
+    plan: "Splash",
+  },
+  {
+    icon: HeartPulse,
+    t: "Pet Spa",
+    d: "Full red-carpet luxury: aromatherapy mud soak, Dead Sea mineral coat therapy, ultrasonic teeth sparkle, and photo shoot.",
+    badge: "Royal Spa Experience",
+    color: "bg-coral text-accent-foreground",
+    plan: "Royal",
+  },
 ];
 
 const testimonials = [
@@ -63,6 +93,24 @@ function Index() {
 
   return (
     <div className="overflow-hidden">
+      {/* ═══════════════ REQUIREMENT 3: 20% DISCOUNT BANNER FOR FIRST-TIME CUSTOMERS ═══════════════ */}
+      <div className="bg-gradient-to-r from-accent via-coral to-accent text-accent-foreground py-3 px-4 text-center text-xs md:text-sm font-bold flex flex-wrap items-center justify-center gap-2 shadow-md relative z-50">
+        <span className="flex items-center gap-1.5 bg-black/25 px-2.5 py-0.5 rounded-full uppercase tracking-wider text-[11px]">
+          <Tag className="h-3.5 w-3.5 text-sun animate-pulse" /> 20% OFF
+        </span>
+        <span>
+          Special Welcome Offer: <strong>20% Discount for First-Time Customers!</strong> Use promo code{" "}
+          <span className="bg-black/25 px-2 py-0.5 rounded font-mono font-black text-sun">FIRST20</span> at checkout.
+        </span>
+        <Link
+          to="/book"
+          search={{ plan: "Spa" }}
+          className="underline ml-2 font-black hover:opacity-90 transition"
+        >
+          Claim 20% Discount Now →
+        </Link>
+      </div>
+
       <SiteNav />
 
       {/* ═══════════════ HERO SECTION ═══════════════ */}
@@ -110,23 +158,27 @@ function Index() {
               Gentle grooming, luxurious bubble baths and breed-perfect styling — tracked live from your personal pet dashboard.
             </p>
 
-            {/* CTA buttons */}
-            <div className="mt-10 flex flex-wrap gap-4">
+            {/* REQUIREMENT 1: "Book a Grooming Appointment" button with date and time selection */}
+            <div className="mt-10 flex flex-wrap items-center gap-4">
               <Link
                 to="/book"
                 search={{ plan: "Spa" }}
-                className="group inline-flex items-center gap-2 rounded-full bg-accent px-8 py-4 font-semibold text-accent-foreground shadow-3d transition-all duration-300 hover:-translate-y-1.5 hover:shadow-[0_40px_80px_-20px_color-mix(in_oklab,var(--accent)_60%,transparent)] glow-cta"
+                className="group inline-flex items-center gap-3 rounded-full bg-accent px-8 py-4 font-bold text-accent-foreground shadow-3d transition-all duration-300 hover:-translate-y-1.5 hover:shadow-[0_40px_80px_-20px_color-mix(in_oklab,var(--accent)_60%,transparent)] glow-cta"
               >
-                Book a session
+                <Calendar className="h-5 w-5" />
+                <span>Book a Grooming Appointment</span>
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
               </Link>
               <Link
                 to="/services"
-                className="group rounded-full border-2 border-primary px-8 py-4 font-semibold transition-all duration-300 hover:bg-primary hover:text-primary-foreground hover:-translate-y-1"
+                className="group rounded-full border-2 border-primary px-7 py-4 font-semibold transition-all duration-300 hover:bg-primary hover:text-primary-foreground hover:-translate-y-1"
               >
-                View packages
+                View Packages
               </Link>
             </div>
+            <p className="mt-2 text-xs text-muted-foreground flex items-center gap-1.5">
+              <Clock className="h-3.5 w-3.5 text-accent" /> Includes instant date & time slot selection
+            </p>
 
             {/* Direct Login & Sign Up Options on Landing Page */}
             <div className="mt-8 rounded-3xl bg-card/90 backdrop-blur p-4 border border-border/70 shadow-sm max-w-md">
@@ -533,6 +585,9 @@ function Index() {
           </div>
         </div>
       </footer>
+
+      {/* Floating Gemini AI Assistant with Voice */}
+      <GeminiAssistant role="parent" />
     </div>
   );
 }

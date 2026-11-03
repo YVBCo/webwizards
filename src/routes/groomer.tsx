@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { SiteNav } from "@/components/SiteNav";
 import { Tilt } from "@/components/Tilt";
+import { GeminiAssistant } from "@/components/GeminiAssistant";
 import { useStore, setState, GROOMING_STEPS, Booking, uid } from "@/lib/store";
 
 export const Route = createFileRoute("/groomer")({
@@ -71,6 +72,7 @@ function GroomerDashboard() {
 
   // Advance grooming stage for a booking
   const advanceStep = (bookingId: string) => {
+    setSelectedBookingId(bookingId);
     const booking = s.bookings.find((b) => b.id === bookingId);
     if (!booking) return;
 
@@ -90,13 +92,44 @@ function GroomerDashboard() {
             }
           : b
       ),
+      broadcast: {
+        ...st.broadcast,
+        petInCam: `${booking.petName || "Pet"} ${booking.petEmoji || "🐶"}`,
+      },
     }));
 
     if (isReady) {
       toast.success(`🎉 ${booking.petName || "Pet"} is marked READY for pickup! Parent's dashboard notified.`);
     } else {
-      toast.success(`Advanced to stage: ${GROOMING_STEPS[nextStep]} 🫧 (Synced with Pet Parent)`);
+      toast.success(`Advanced ${booking.petName || "Pet"} to stage ${nextStep + 1}: ${GROOMING_STEPS[nextStep]} 🫧 (Synced with Pet Parent)`);
     }
+  };
+
+  // Directly jump to or set a grooming step
+  const setStepDirectly = (bookingId: string, targetStepIndex: number) => {
+    setSelectedBookingId(bookingId);
+    const booking = s.bookings.find((b) => b.id === bookingId);
+    if (!booking) return;
+
+    const isReady = targetStepIndex === GROOMING_STEPS.length - 1;
+    setState((st) => ({
+      ...st,
+      step: targetStepIndex,
+      bookings: st.bookings.map((b) =>
+        b.id === bookingId
+          ? {
+              ...b,
+              currentStep: targetStepIndex,
+              status: isReady ? "done" : "in-progress",
+            }
+          : b
+      ),
+      broadcast: {
+        ...st.broadcast,
+        petInCam: `${booking.petName || "Pet"} ${booking.petEmoji || "🐶"}`,
+      },
+    }));
+    toast.success(`Set ${booking.petName || "Pet"} to stage: ${GROOMING_STEPS[targetStepIndex]} 🫧`);
   };
 
   const setBookingStatus = (bookingId: string, status: "in-progress" | "done" | "cancelled") => {
@@ -489,27 +522,35 @@ function GroomerDashboard() {
           <div className="mt-6 grid gap-6 md:grid-cols-12 items-center">
             {/* Simulated Groomer Camera View (8 Cols) */}
             <div className="md:col-span-8 relative aspect-video w-full rounded-2xl bg-neutral-950 overflow-hidden shadow-inner flex flex-col justify-between p-5 text-white">
+              {/* Actual Pet Grooming Video Feed */}
+              <video
+                src="/pet-dry-video.mp4"
+                autoPlay
+                loop
+                muted
+                playsInline
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+              <div className="absolute inset-0 bg-black/25 pointer-events-none" />
+
               {/* Top Stream Status Bar */}
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-mono bg-black/60 px-2.5 py-1 rounded-lg flex items-center gap-2">
+              <div className="relative z-10 flex items-center justify-between text-xs">
+                <span className="font-mono bg-black/60 backdrop-blur px-2.5 py-1 rounded-lg flex items-center gap-2">
                   <span className={`h-2.5 w-2.5 rounded-full ${s.broadcast.isBroadcasting ? "bg-red-500 animate-pulse" : "bg-neutral-500"}`} />
                   {s.broadcast.isBroadcasting ? "ON AIR TO PARENT" : "STANDBY"} // {s.broadcast.activeCam}
                 </span>
-                <span className="font-mono bg-black/60 px-2.5 py-1 rounded-lg">1080p 60FPS</span>
+                <span className="font-mono bg-black/60 backdrop-blur px-2.5 py-1 rounded-lg">1080p 60FPS</span>
               </div>
 
               {/* Center Feed Content */}
-              <div className="flex flex-col items-center justify-center text-center">
-                <div className="text-8xl animate-bounce">
-                  {activeBooking?.petEmoji || "🐶"}
-                </div>
-                <div className="mt-3 bg-black/70 backdrop-blur px-4 py-1.5 rounded-full text-xs font-bold">
+              <div className="relative z-10 flex flex-col items-center justify-center text-center">
+                <div className="bg-black/70 backdrop-blur px-4 py-1.5 rounded-full text-xs font-bold">
                   Subject: {activeBooking?.petName || "Pet"} ({activeBooking?.petBreed || "Breed"}) · Current Stage: {GROOMING_STEPS[activeBooking?.currentStep ?? 0]}
                 </div>
               </div>
 
               {/* Bottom Stream Status */}
-              <div className="flex items-center justify-between text-xs opacity-80">
+              <div className="relative z-10 flex items-center justify-between text-xs opacity-90 bg-black/50 px-3 py-1 rounded-xl backdrop-blur-sm">
                 <span>Station Lead: {s.currentUser?.name || "Master Groomer"}</span>
                 <span>Parent Viewing Status: Connected 📱</span>
               </div>
@@ -597,26 +638,34 @@ function GroomerDashboard() {
                   </div>
                 </div>
 
-                {/* Stage Steps Icons */}
+                {/* Stage Steps Icons (Interactive Click to Set Stage) */}
                 <div className="mt-6 grid grid-cols-6 gap-2 text-center text-xs">
                   {GROOMING_STEPS.map((st, i) => {
                     const isDone = i < (activeBooking.currentStep ?? 0);
                     const isCurrent = i === (activeBooking.currentStep ?? 0);
                     return (
-                      <div key={st} className={isCurrent ? "font-bold text-foreground" : "text-muted-foreground"}>
+                      <button
+                        key={st}
+                        type="button"
+                        onClick={() => setStepDirectly(activeBooking.id, i)}
+                        title={`Click to set ${activeBooking.petName || "pet"} to stage ${i + 1}: ${st}`}
+                        className={`group transition-all ${
+                          isCurrent ? "font-bold text-foreground scale-105" : "text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
                         <div
-                          className={`mx-auto mb-2 flex h-8 w-8 items-center justify-center rounded-full transition-all ${
+                          className={`mx-auto mb-2 flex h-9 w-9 items-center justify-center rounded-full transition-all cursor-pointer ${
                             isCurrent
-                              ? "bg-accent text-accent-foreground shadow-md scale-110"
+                              ? "bg-accent text-accent-foreground shadow-md scale-110 ring-4 ring-accent/20"
                               : isDone
-                              ? "bg-mint text-primary"
-                              : "bg-muted"
+                              ? "bg-mint text-primary hover:bg-mint/80"
+                              : "bg-muted hover:bg-secondary"
                           }`}
                         >
                           {isDone ? <Check className="h-4 w-4" /> : i + 1}
                         </div>
                         <span className="text-[11px] leading-tight block">{st}</span>
-                      </div>
+                      </button>
                     );
                   })}
                 </div>
@@ -708,6 +757,7 @@ function GroomerDashboard() {
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setBookingStatus(b.id, "in-progress");
+                                setSelectedBookingId(b.id);
                               }}
                               className="rounded-full bg-primary px-3 py-1.5 font-bold text-primary-foreground hover:scale-105 transition"
                             >
@@ -827,6 +877,9 @@ function GroomerDashboard() {
           </div>
         </div>
       </main>
+
+      {/* Floating Gemini AI Salon Co-Pilot with Audio */}
+      <GeminiAssistant role="groomer" />
     </div>
   );
 }

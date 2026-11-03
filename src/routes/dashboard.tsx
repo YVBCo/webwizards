@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { SiteNav } from "@/components/SiteNav";
 import { Tilt } from "@/components/Tilt";
+import { GeminiAssistant } from "@/components/GeminiAssistant";
 import { setState, uid, useStore } from "@/lib/store";
 
 export const Route = createFileRoute("/dashboard")({
@@ -85,7 +86,15 @@ function Dashboard() {
   ]);
 
   const pet = s.pets.find((p) => p.id === selId) ?? s.pets[0];
-  const step = s.step;
+  
+  // Real-time sync with Grooming Salon: match pet to active salon booking
+  const activeBookingForPet = s.bookings.find(
+    (b) =>
+      (b.petId === pet?.id || b.petName?.toLowerCase() === pet?.name.toLowerCase()) &&
+      (b.status === "in-progress" || b.status === "upcoming")
+  ) ?? s.bookings.find((b) => b.petId === pet?.id || b.petName?.toLowerCase() === pet?.name.toLowerCase());
+
+  const step = activeBookingForPet?.currentStep ?? s.step;
   const list = s.bookings.filter((b) => b.status === tab);
   const spent = s.bookings.filter((b) => b.status !== "cancelled").reduce((a, b) => a + b.total, 0);
   const tier = s.points >= 1000 ? "Royal" : s.points >= 500 ? "Gold" : "Silver";
@@ -117,7 +126,13 @@ function Dashboard() {
 
   const advance = () => {
     const n = (step + 1) % steps.length;
-    setState((st) => ({ ...st, step: n }));
+    setState((st) => ({
+      ...st,
+      step: n,
+      bookings: activeBookingForPet
+        ? st.bookings.map((b) => (b.id === activeBookingForPet.id ? { ...b, currentStep: n } : b))
+        : st.bookings,
+    }));
     if (n === steps.length - 1) toast.success(`${pet?.name ?? "Your pet"} is ready for pickup! 🎀`);
   };
 
@@ -360,15 +375,18 @@ function Dashboard() {
           <div className="rounded-3xl bg-card p-8 shadow-3d lg:col-span-2">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-2xl font-bold">Live Grooming Tracker</h3>
-                <p className="text-xs text-muted-foreground">Real-time status updates from our groomers</p>
+                <h3 className="text-2xl font-bold">Live Grooming Tracker · {pet?.name ?? "Pet"}</h3>
+                <p className="text-xs text-muted-foreground">
+                  {activeBookingForPet?.centerName ? (
+                    <>Live session with <strong>{activeBookingForPet.centerName}</strong></>
+                  ) : (
+                    "Real-time status updates synced directly with salon groomers"
+                  )}
+                </p>
               </div>
-              <button
-                onClick={advance}
-                className="rounded-full bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground transition hover:scale-105 shadow-md"
-              >
-                {step === steps.length - 1 ? "Restart Cycle" : "Advance Stage →"}
-              </button>
+              <span className="rounded-full bg-accent/15 px-3.5 py-1 text-xs font-bold text-accent">
+                Current: {steps[step]}
+              </span>
             </div>
             <div className="mt-8 h-3 overflow-hidden rounded-full bg-muted">
               <div
@@ -546,17 +564,28 @@ function Dashboard() {
               </div>
             </div>
 
-            {/* Video Canvas Simulation */}
+            {/* Video Canvas Real Video Player */}
             <div className="relative mt-5 aspect-video w-full overflow-hidden rounded-2xl bg-neutral-900 shadow-inner flex flex-col justify-between p-4 text-white">
-              <div className="flex items-center justify-between text-xs opacity-80">
-                <span className="font-mono bg-black/50 px-2.5 py-1 rounded">
+              {/* Actual Pet Grooming/Drying Video */}
+              <video
+                src="/pet-dry-video.mp4"
+                autoPlay
+                loop
+                muted
+                playsInline
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+              <div className="absolute inset-0 bg-black/25 pointer-events-none" />
+
+              <div className="relative z-10 flex items-center justify-between text-xs opacity-90">
+                <span className="font-mono bg-black/60 backdrop-blur px-2.5 py-1 rounded">
                   FEED: {s.broadcast.activeCam} // {pet?.name ?? "PET"}_SPA
                 </span>
-                <span className="font-mono bg-black/50 px-2.5 py-1 rounded">1080p 60FPS</span>
+                <span className="font-mono bg-black/60 backdrop-blur px-2.5 py-1 rounded">1080p 60FPS</span>
               </div>
-              <div className="flex flex-col items-center justify-center text-center">
-                <div className="text-7xl animate-bounce">{pet?.e ?? "🐶"}</div>
-                <div className="mt-2 text-sm font-semibold tracking-wide bg-black/60 px-4 py-1.5 rounded-full backdrop-blur-sm">
+
+              <div className="relative z-10 flex flex-col items-center justify-center text-center">
+                <div className="mt-2 text-sm font-semibold tracking-wide bg-black/70 px-4 py-1.5 rounded-full backdrop-blur-md">
                   {s.broadcast.isBroadcasting ? (
                     <>
                       {pet?.name ?? "Your Pet"} is currently at: <strong>{steps[step]}</strong>! 🫧
@@ -566,7 +595,8 @@ function Dashboard() {
                   )}
                 </div>
               </div>
-              <div className="flex items-center justify-between text-xs opacity-75">
+
+              <div className="relative z-10 flex items-center justify-between text-xs opacity-85 bg-black/50 px-3 py-1 rounded-xl backdrop-blur-sm">
                 <span className="flex items-center gap-1">
                   <Clock className="h-3 w-3" /> Live Feed Synced with Salon
                 </span>
@@ -775,6 +805,9 @@ function Dashboard() {
           </div>
         </div>
       </main>
+
+      {/* Floating Gemini AI Pet Care Assistant with Audio */}
+      <GeminiAssistant role="parent" />
     </div>
   );
 }
