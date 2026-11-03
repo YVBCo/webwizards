@@ -42,6 +42,31 @@ export type Booking = {
   notes?: string | undefined;
 };
 
+export type LiveBroadcast = {
+  isBroadcasting: boolean;
+  activeCam: "Tub Cam 01" | "Styling Suite 02" | "Drying Bay 03";
+  isRecording: boolean;
+  recordingSeconds: number;
+  lastSnapshotTime?: string | undefined;
+  petInCam: string;
+  groomerNotes: string;
+  recordedClips: {
+    id: string;
+    title: string;
+    duration: string;
+    time: string;
+    stage: string;
+    thumbnailEmoji: string;
+  }[];
+  liveSnapshots: {
+    id: string;
+    title: string;
+    time: string;
+    emoji: string;
+    stage: string;
+  }[];
+};
+
 export type GroomingCenter = {
   id: string;
   name: string;
@@ -52,10 +77,10 @@ export type GroomingCenter = {
   distance: string;
   rating: number;
   reviews: number;
-  lat: number; // For interactive SVG Map
+  lat: number;
   lng: number;
-  xPercent: number; // 0-100% position on interactive stylized map
-  yPercent: number; // 0-100% position on interactive stylized map
+  xPercent: number;
+  yPercent: number;
   phone: string;
   openHours: string;
   slotsAvailable: number;
@@ -70,6 +95,7 @@ type State = {
   points: number;
   step: number;
   centers: GroomingCenter[];
+  broadcast: LiveBroadcast;
 };
 
 export const PLANS = [
@@ -179,13 +205,13 @@ export const INITIAL_CENTERS: GroomingCenter[] = [
   },
 ];
 
-const KEY = "furfern-v2";
+const KEY = "furfern-v3";
 
 const initial: State = {
   currentUser: {
     id: "u-parent-demo",
     name: "Alex Morgan",
-    email: "alex@example.com",
+    email: "parent@furfern.in",
     role: "parent",
     phone: "+91 98765 12345",
   },
@@ -206,7 +232,7 @@ const initial: State = {
       centerName: "Fur&Fern Flagship Spa & Sanctuary",
       plan: "Spa",
       addons: ["Nail art", "Pickup & drop"],
-      date: new Date(Date.now() + 86400000).toDateString(),
+      date: new Date().toDateString(),
       time: "10:30",
       total: 1947,
       status: "in-progress",
@@ -225,7 +251,7 @@ const initial: State = {
       centerName: "Fur&Fern Flagship Spa & Sanctuary",
       plan: "Royal",
       addons: ["De-shedding"],
-      date: new Date(Date.now() + 172800000).toDateString(),
+      date: new Date(Date.now() + 86400000).toDateString(),
       time: "14:00",
       total: 2798,
       status: "upcoming",
@@ -251,29 +277,41 @@ const initial: State = {
       currentStep: 5,
       notes: "Loves belly rubs during towel dry",
     },
-    {
-      id: "b-104",
-      petId: "p-ext-2",
-      petName: "Coco",
-      petBreed: "Shih Tzu",
-      petEmoji: "🐩",
-      customerName: "Rohit Verma",
-      customerPhone: "+91 97112 33445",
-      centerId: "gc-1",
-      centerName: "Fur&Fern Flagship Spa & Sanctuary",
-      plan: "Spa",
-      addons: ["Nail art"],
-      date: new Date().toDateString(),
-      time: "12:00",
-      total: 1698,
-      status: "upcoming",
-      currentStep: 0,
-      notes: "Teddy bear face trim requested",
-    },
   ],
   points: 450,
   step: 2,
   centers: INITIAL_CENTERS,
+  broadcast: {
+    isBroadcasting: true,
+    activeCam: "Tub Cam 01",
+    isRecording: false,
+    recordingSeconds: 0,
+    petInCam: "Biscuit 🐶",
+    groomerNotes: "Blow dry in progress with warm lavender air",
+    recordedClips: [
+      {
+        id: "clip-1",
+        title: "Bubble Bath Warm Soak",
+        duration: "0:45",
+        time: "10:18 AM",
+        stage: "Bubble bath",
+        thumbnailEmoji: "🫧",
+      },
+      {
+        id: "clip-2",
+        title: "Gentle Fluff Blowout",
+        duration: "1:12",
+        time: "10:35 AM",
+        stage: "Blow dry",
+        thumbnailEmoji: "💨",
+      },
+    ],
+    liveSnapshots: [
+      { id: "snap-1", title: "Arrival Check-in Snack", time: "10:05 AM", emoji: "🦴", stage: "Check-in" },
+      { id: "snap-2", title: "Oatmeal Bubble Foam Hat", time: "10:22 AM", emoji: "🫧", stage: "Bubble bath" },
+      { id: "snap-3", title: "Fluffy Coat Drying Session", time: "10:40 AM", emoji: "💨", stage: "Blow dry" },
+    ],
+  },
 };
 
 let state: State = initial;
@@ -288,9 +326,11 @@ function load() {
     if (s) {
       const parsed = JSON.parse(s);
       state = { ...initial, ...parsed };
-      // Ensure centers exist
       if (!state.centers || state.centers.length === 0) {
         state.centers = INITIAL_CENTERS;
+      }
+      if (!state.broadcast) {
+        state.broadcast = initial.broadcast;
       }
     }
   } catch {}

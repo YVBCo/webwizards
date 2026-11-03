@@ -484,18 +484,31 @@ function Dashboard() {
                 </div>
                 <div>
                   <h3 className="text-2xl font-bold">Live Grooming Cam 📹</h3>
-                  <p className="text-xs text-muted-foreground">Stream Station 02 · Fur&Fern Spa Center</p>
+                  <p className="text-xs text-muted-foreground">
+                    Direct Stream from Groomer · {s.broadcast.activeCam}
+                  </p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <span className="flex items-center gap-1.5 rounded-full bg-destructive/15 px-3 py-1 text-xs font-bold text-destructive">
-                  <span className="h-2 w-2 rounded-full bg-destructive animate-pulse" /> LIVE HD
+                <span
+                  className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold ${
+                    s.broadcast.isBroadcasting
+                      ? "bg-destructive/15 text-destructive animate-pulse"
+                      : "bg-muted text-muted-foreground"
+                  }`}
+                >
+                  <span
+                    className={`h-2 w-2 rounded-full ${
+                      s.broadcast.isBroadcasting ? "bg-destructive animate-ping" : "bg-neutral-400"
+                    }`}
+                  />
+                  {s.broadcast.isBroadcasting ? "LIVE HD ON AIR" : "STREAM STANDBY"}
                 </span>
                 <button
                   onClick={takeSnapshot}
                   className="flex items-center gap-1.5 rounded-full bg-accent px-4 py-1.5 text-xs font-bold text-accent-foreground shadow-sm transition hover:scale-105 active:scale-95"
                 >
-                  <Camera className="h-3.5 w-3.5" /> Snap Photo
+                  <Camera className="h-3.5 w-3.5" /> Save Photo
                 </button>
               </div>
             </div>
@@ -503,28 +516,65 @@ function Dashboard() {
             {/* Video Canvas Simulation */}
             <div className="relative mt-5 aspect-video w-full overflow-hidden rounded-2xl bg-neutral-900 shadow-inner flex flex-col justify-between p-4 text-white">
               <div className="flex items-center justify-between text-xs opacity-80">
-                <span className="font-mono bg-black/40 px-2 py-1 rounded">CAM-02 // {pet?.name ?? "PET"}_SPA</span>
-                <span className="font-mono bg-black/40 px-2 py-1 rounded">1080p 60FPS</span>
+                <span className="font-mono bg-black/50 px-2.5 py-1 rounded">
+                  FEED: {s.broadcast.activeCam} // {pet?.name ?? "PET"}_SPA
+                </span>
+                <span className="font-mono bg-black/50 px-2.5 py-1 rounded">1080p 60FPS</span>
               </div>
               <div className="flex flex-col items-center justify-center text-center">
                 <div className="text-7xl animate-bounce">{pet?.e ?? "🐶"}</div>
-                <div className="mt-2 text-sm font-semibold tracking-wide bg-black/50 px-4 py-1.5 rounded-full backdrop-blur-sm">
-                  {pet?.name ?? "Your Pet"} is enjoying the {steps[step]}! 🫧
+                <div className="mt-2 text-sm font-semibold tracking-wide bg-black/60 px-4 py-1.5 rounded-full backdrop-blur-sm">
+                  {s.broadcast.isBroadcasting ? (
+                    <>
+                      {pet?.name ?? "Your Pet"} is currently at: <strong>{steps[step]}</strong>! 🫧
+                    </>
+                  ) : (
+                    <span>Groomer standing by for next station transfer</span>
+                  )}
                 </div>
               </div>
               <div className="flex items-center justify-between text-xs opacity-75">
                 <span className="flex items-center gap-1">
-                  <Clock className="h-3 w-3" /> Elapsed: 18m
+                  <Clock className="h-3 w-3" /> Live Feed Synced with Salon
                 </span>
                 <span>Groomer: Sarah M. (Certified Master)</span>
               </div>
             </div>
 
-            {/* Snapshot Gallery Carousel */}
-            <div className="mt-4">
-              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">Session Snapshots ({snaps.length})</p>
+            {/* Video Recorded Highlights from Groomer */}
+            <div className="mt-5 border-t pt-4">
+              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center justify-between">
+                <span>📹 Recorded Video Clips from Groomer ({s.broadcast.recordedClips.length})</span>
+                <span className="text-[10px] text-accent font-semibold">Saved to Pet Diary</span>
+              </p>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {s.broadcast.recordedClips.map((clip) => (
+                  <div
+                    key={clip.id}
+                    className="flex items-center justify-between rounded-2xl bg-secondary/80 p-3 text-xs border border-border/50"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <span className="text-2xl">{clip.thumbnailEmoji}</span>
+                      <div>
+                        <p className="font-bold text-foreground">{clip.title}</p>
+                        <p className="text-[11px] text-muted-foreground">{clip.stage} · {clip.time}</p>
+                      </div>
+                    </div>
+                    <span className="rounded-full bg-accent text-accent-foreground px-2 py-0.5 text-[10px] font-bold">
+                      ▶ {clip.duration}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Live Snapshots Sent by Groomer */}
+            <div className="mt-4 border-t pt-3">
+              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">
+                Live Snapshots Sent by Groomer ({s.broadcast.liveSnapshots.length})
+              </p>
               <div className="flex gap-3 overflow-x-auto pb-2">
-                {snaps.map((sn) => (
+                {s.broadcast.liveSnapshots.map((sn) => (
                   <div
                     key={sn.id}
                     className="flex shrink-0 items-center gap-2 rounded-2xl bg-secondary px-3 py-2 text-xs font-medium animate-in fade-in"
@@ -532,7 +582,7 @@ function Dashboard() {
                     <span className="text-lg">{sn.emoji}</span>
                     <div>
                       <p className="font-bold text-foreground">{sn.title}</p>
-                      <p className="text-[10px] text-muted-foreground">{sn.time}</p>
+                      <p className="text-[10px] text-muted-foreground">{sn.stage} · {sn.time}</p>
                     </div>
                   </div>
                 ))}

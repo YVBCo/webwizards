@@ -1,16 +1,16 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
-import { PawPrint, Scissors, Mail, Lock, User, Phone, MapPin, Building, ArrowRight, CheckCircle2, Sparkles, ShieldCheck } from "lucide-react";
+import { PawPrint, Scissors, Mail, Lock, User, Phone, MapPin, Building, ArrowRight, ShieldCheck, Sparkles, CheckCircle2, KeyRound } from "lucide-react";
 import { SiteNav } from "@/components/SiteNav";
 import { setState, uid, useStore, UserRole, GroomingCenter } from "@/lib/store";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
-      { title: "Sign In or Join — Fur&Fern Pet Spa" },
+      { title: "Sign In or Register — Fur&Fern Pet Spa" },
       { name: "description", content: "Access your pet parent portal or grooming salon center dashboard." },
-      { property: "og:title", content: "Sign In or Join — Fur&Fern Pet Spa" },
+      { property: "og:title", content: "Sign In or Register — Fur&Fern Pet Spa" },
       { property: "og:description", content: "Access your pet parent portal or grooming salon center dashboard." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -40,6 +40,21 @@ function AuthPage() {
   const [shopAddress, setShopAddress] = useState("");
   const [shopArea, setShopArea] = useState("HSR Layout");
 
+  // Auto-fill credential presets
+  const fillCredentials = (selectedRole: UserRole) => {
+    setRole(selectedRole);
+    setTab("login");
+    if (selectedRole === "parent") {
+      setLoginEmail("parent@furfern.in");
+      setLoginPassword("parent123");
+      toast.info("Filled Pet Parent demo credentials 🐶");
+    } else {
+      setLoginEmail("groomer@furfern.in");
+      setLoginPassword("groomer123");
+      toast.info("Filled Grooming Shop demo credentials 💈");
+    }
+  };
+
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     if (!loginEmail.trim()) {
@@ -47,20 +62,22 @@ function AuthPage() {
       return;
     }
 
+    const isGroomer = role === "groomer" || loginEmail.includes("groomer") || loginEmail.includes("salon");
+
     const newUser = {
       id: uid(),
       email: loginEmail,
-      name: loginEmail.split("@")[0] || "Pet Parent",
-      role: role,
+      name: isGroomer ? "Sarah M. (Master Groomer)" : (loginEmail.split("@")[0] || "Pet Parent"),
+      role: isGroomer ? ("groomer" as UserRole) : ("parent" as UserRole),
       phone: "+91 98765 00000",
-      shopName: role === "groomer" ? "Fur&Fern Studio & Spa" : undefined,
-      shopArea: role === "groomer" ? "HSR Layout" : undefined,
+      shopName: isGroomer ? "Fur&Fern Flagship Spa & Sanctuary" : undefined,
+      shopArea: isGroomer ? "HSR Layout" : undefined,
     };
 
     setState((st) => ({ ...st, currentUser: newUser }));
     toast.success(`Welcome back, ${newUser.name}! 👋`);
     
-    if (role === "groomer") {
+    if (newUser.role === "groomer") {
       nav({ to: "/groomer" });
     } else {
       nav({ to: "/dashboard" });
@@ -95,7 +112,6 @@ function AuthPage() {
       shopArea: role === "groomer" ? shopArea : undefined,
     };
 
-    // If registering as a groomer, dynamically register the shop onto the Interactive Map!
     if (role === "groomer") {
       const newCenter: GroomingCenter = {
         id: `gc-${uid()}`,
@@ -123,7 +139,7 @@ function AuthPage() {
         currentUser: newUser,
         centers: [newCenter, ...st.centers],
       }));
-      toast.success(`🎉 Grooming salon "${shopName}" created and added to the pet parent map!`);
+      toast.success(`🎉 Grooming salon "${shopName}" registered & pinned on the pet map!`);
       nav({ to: "/groomer" });
     } else {
       setState((st) => ({
@@ -135,39 +151,6 @@ function AuthPage() {
     }
   };
 
-  const quickDemoLogin = (selectedRole: UserRole) => {
-    if (selectedRole === "parent") {
-      setState((st) => ({
-        ...st,
-        currentUser: {
-          id: "u-parent-demo",
-          name: "Alex Morgan",
-          email: "alex@furandfern.in",
-          role: "parent",
-          phone: "+91 98765 12345",
-        },
-      }));
-      toast.success("Logged in as Pet Parent (Alex Morgan) 🐶");
-      nav({ to: "/dashboard" });
-    } else {
-      setState((st) => ({
-        ...st,
-        currentUser: {
-          id: "u-groomer-demo",
-          name: "Sarah M.",
-          email: "sarah@furandfern.in",
-          role: "groomer",
-          phone: "+91 98765 43210",
-          shopName: "Fur&Fern Flagship Spa & Sanctuary",
-          shopAddress: "24th Main, Sector 2, HSR Layout",
-          shopArea: "HSR Layout",
-        },
-      }));
-      toast.success("Logged in as Master Groomer (Sarah M.) 💈");
-      nav({ to: "/groomer" });
-    }
-  };
-
   return (
     <div className="min-h-screen bg-hero">
       <SiteNav />
@@ -175,51 +158,71 @@ function AuthPage() {
       <main className="mx-auto max-w-5xl px-6 pt-32 pb-20">
         <div className="text-center max-w-xl mx-auto mb-10">
           <span className="inline-flex items-center gap-2 rounded-full bg-card/80 backdrop-blur px-4 py-1.5 text-xs font-bold shadow-sm border border-border/50">
-            <Sparkles className="h-3.5 w-3.5 text-accent" /> One Unified Portal
+            <Sparkles className="h-3.5 w-3.5 text-accent" /> Two-Way Portal Sync
           </span>
-          <h1 className="mt-4 text-4xl md:text-5xl font-black">Welcome to Fur&Fern</h1>
+          <h1 className="mt-4 text-4xl md:text-5xl font-black">Pet Parent & Groomer Login</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Sign in or create an account for pet parents and certified grooming salons.
+            Sign in below to test live camera streaming, stage updates, and real-time synchronization between both sides.
           </p>
         </div>
 
-        {/* Quick Demo Login Cards for Instant 1-Click Access */}
-        <div className="mb-10 rounded-3xl bg-sun/40 p-6 shadow-3d border-2 border-sun backdrop-blur">
-          <p className="text-xs font-black uppercase tracking-wider text-foreground mb-3 flex items-center gap-1.5">
-            <ShieldCheck className="h-4 w-4 text-accent" /> Instant 1-Click Demo Login
-          </p>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <button
-              onClick={() => quickDemoLogin("parent")}
-              className="flex items-center gap-3 rounded-2xl bg-card p-4 text-left shadow-sm transition-all hover:scale-[1.02] hover:shadow-md border border-border/60"
-            >
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-accent text-accent-foreground text-2xl">
-                🐶
-              </div>
-              <div className="flex-1">
-                <p className="font-bold text-sm">Enter as Pet Parent</p>
-                <p className="text-xs text-muted-foreground">Alex Morgan · View pet health, tracker & bookings</p>
-              </div>
-              <ArrowRight className="h-4 w-4 text-accent" />
-            </button>
+        {/* DEMO CREDENTIALS BOX (EXPLICIT USER PASSWORDS) */}
+        <div className="mb-8 rounded-3xl bg-card p-6 shadow-3d border-2 border-primary/20 backdrop-blur">
+          <div className="flex items-center gap-2 mb-4">
+            <KeyRound className="h-5 w-5 text-accent" />
+            <h2 className="text-base font-black">Test Login Credentials (Click to Auto-fill)</h2>
+          </div>
 
-            <button
-              onClick={() => quickDemoLogin("groomer")}
-              className="flex items-center gap-3 rounded-2xl bg-card p-4 text-left shadow-sm transition-all hover:scale-[1.02] hover:shadow-md border border-border/60"
-            >
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground text-2xl">
-                💈
+          <div className="grid gap-4 sm:grid-cols-2">
+            {/* Parent Box */}
+            <div className="rounded-2xl bg-secondary/80 p-4 border border-border">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-sm flex items-center gap-1.5">
+                  🐶 Pet Parent Account
+                </span>
+                <span className="text-[10px] bg-accent/20 text-accent font-bold px-2 py-0.5 rounded-full">
+                  Parent Side
+                </span>
               </div>
-              <div className="flex-1">
-                <p className="font-bold text-sm">Enter as Grooming Salon</p>
-                <p className="text-xs text-muted-foreground">Sarah M. · Manage queue, salon stations & live cam</p>
+              <div className="mt-3 space-y-1 text-xs font-mono bg-background/60 p-2.5 rounded-xl border">
+                <p>Email: <strong className="text-foreground">parent@furfern.in</strong></p>
+                <p>Password: <strong className="text-foreground">parent123</strong></p>
               </div>
-              <ArrowRight className="h-4 w-4 text-primary" />
-            </button>
+              <button
+                type="button"
+                onClick={() => fillCredentials("parent")}
+                className="mt-3 w-full rounded-full bg-accent py-2 text-xs font-bold text-accent-foreground shadow-sm hover:scale-[1.02] transition"
+              >
+                Auto-fill Pet Parent Login →
+              </button>
+            </div>
+
+            {/* Groomer Box */}
+            <div className="rounded-2xl bg-secondary/80 p-4 border border-border">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-sm flex items-center gap-1.5">
+                  💈 Grooming Center Account
+                </span>
+                <span className="text-[10px] bg-primary/20 text-primary font-bold px-2 py-0.5 rounded-full">
+                  Salon Side
+                </span>
+              </div>
+              <div className="mt-3 space-y-1 text-xs font-mono bg-background/60 p-2.5 rounded-xl border">
+                <p>Email: <strong className="text-foreground">groomer@furfern.in</strong></p>
+                <p>Password: <strong className="text-foreground">groomer123</strong></p>
+              </div>
+              <button
+                type="button"
+                onClick={() => fillCredentials("groomer")}
+                className="mt-3 w-full rounded-full bg-primary py-2 text-xs font-bold text-primary-foreground shadow-sm hover:scale-[1.02] transition"
+              >
+                Auto-fill Groomer Salon Login →
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Main Auth Box */}
+        {/* Main Auth Form Box */}
         <div className="mx-auto max-w-xl rounded-3xl bg-card/95 p-8 shadow-3d backdrop-blur border border-border/60">
           {/* Login vs Signup Tabs */}
           <div className="flex rounded-full bg-muted p-1 text-sm font-bold">
@@ -237,20 +240,20 @@ function AuthPage() {
                 tab === "signup" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              Create Account
+              Register New Account
             </button>
           </div>
 
           {/* Role Selector */}
           <div className="mt-6">
             <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground block mb-2">
-              Select Your Account Type:
+              Select Login Role:
             </label>
             <div className="grid grid-cols-2 gap-3">
               <button
                 type="button"
                 onClick={() => setRole("parent")}
-                className={`flex items-center justify-center gap-2 rounded-2xl p-3.5 font-bold text-sm border-2 transition-all duration-200 ${
+                className={`flex items-center justify-center gap-2 rounded-2xl p-3 font-bold text-sm border-2 transition-all duration-200 ${
                   role === "parent"
                     ? "border-accent bg-accent/15 text-accent shadow-sm"
                     : "border-border bg-card text-muted-foreground hover:bg-secondary"
@@ -261,7 +264,7 @@ function AuthPage() {
               <button
                 type="button"
                 onClick={() => setRole("groomer")}
-                className={`flex items-center justify-center gap-2 rounded-2xl p-3.5 font-bold text-sm border-2 transition-all duration-200 ${
+                className={`flex items-center justify-center gap-2 rounded-2xl p-3 font-bold text-sm border-2 transition-all duration-200 ${
                   role === "groomer"
                     ? "border-primary bg-primary/15 text-primary shadow-sm"
                     : "border-border bg-card text-muted-foreground hover:bg-secondary"
@@ -284,7 +287,7 @@ function AuthPage() {
                     required
                     value={loginEmail}
                     onChange={(e) => setLoginEmail(e.target.value)}
-                    placeholder={role === "parent" ? "parent@example.com" : "salon@furandfern.in"}
+                    placeholder={role === "parent" ? "parent@furfern.in" : "groomer@furfern.in"}
                     className="w-full rounded-2xl border bg-background pl-11 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
                   />
                 </div>
@@ -299,7 +302,7 @@ function AuthPage() {
                     required
                     value={loginPassword}
                     onChange={(e) => setLoginPassword(e.target.value)}
-                    placeholder="••••••••"
+                    placeholder="Enter password"
                     className="w-full rounded-2xl border bg-background pl-11 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
                   />
                 </div>
@@ -313,14 +316,14 @@ function AuthPage() {
                     : "bg-accent text-accent-foreground"
                 }`}
               >
-                Sign In as {role === "groomer" ? "Groomer / Salon" : "Pet Parent"} →
+                Sign In to {role === "groomer" ? "Groomer Salon Portal" : "Pet Parent Dashboard"} →
               </button>
             </form>
           ) : (
             /* SIGNUP FORM */
             <form onSubmit={handleSignup} className="mt-6 space-y-4">
               <div>
-                <label className="text-xs font-bold text-muted-foreground mb-1 block">Full Name</label>
+                <label className="text-xs font-bold text-muted-foreground mb-1 block">Your Name</label>
                 <div className="relative">
                   <User className="absolute left-4 top-3.5 h-4 w-4 text-muted-foreground" />
                   <input
@@ -328,17 +331,16 @@ function AuthPage() {
                     required
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="Your Name"
+                    placeholder="Full Name"
                     className="w-full rounded-2xl border bg-background pl-11 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
                   />
                 </div>
               </div>
 
-              {/* Groomer-specific salon details */}
               {role === "groomer" && (
                 <>
                   <div>
-                    <label className="text-xs font-bold text-primary mb-1 block">Salon / Center Business Name</label>
+                    <label className="text-xs font-bold text-primary mb-1 block">Grooming Salon Business Name</label>
                     <div className="relative">
                       <Building className="absolute left-4 top-3.5 h-4 w-4 text-primary" />
                       <input
@@ -346,7 +348,7 @@ function AuthPage() {
                         required
                         value={shopName}
                         onChange={(e) => setShopName(e.target.value)}
-                        placeholder="e.g. Fluffy Paws Spa & Lounge"
+                        placeholder="e.g. Pampered Paws Boutique"
                         className="w-full rounded-2xl border bg-background pl-11 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                       />
                     </div>
@@ -354,7 +356,7 @@ function AuthPage() {
 
                   <div className="grid gap-3 sm:grid-cols-2">
                     <div>
-                      <label className="text-xs font-bold text-muted-foreground mb-1 block">Salon Area / Neighborhood</label>
+                      <label className="text-xs font-bold text-muted-foreground mb-1 block">Salon Neighborhood / Area</label>
                       <select
                         value={shopArea}
                         onChange={(e) => setShopArea(e.target.value)}
@@ -365,12 +367,11 @@ function AuthPage() {
                         <option value="Indiranagar">Indiranagar</option>
                         <option value="Whitefield">Whitefield</option>
                         <option value="Jayanagar">Jayanagar</option>
-                        <option value="JP Nagar">JP Nagar</option>
                       </select>
                     </div>
 
                     <div>
-                      <label className="text-xs font-bold text-muted-foreground mb-1 block">Street Address</label>
+                      <label className="text-xs font-bold text-muted-foreground mb-1 block">Shop Address</label>
                       <div className="relative">
                         <MapPin className="absolute left-4 top-3.5 h-4 w-4 text-muted-foreground" />
                         <input
@@ -378,7 +379,7 @@ function AuthPage() {
                           required
                           value={shopAddress}
                           onChange={(e) => setShopAddress(e.target.value)}
-                          placeholder="e.g. 15th Cross, 4th Block"
+                          placeholder="Street & Building No."
                           className="w-full rounded-2xl border bg-background pl-11 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                         />
                       </div>
@@ -397,7 +398,7 @@ function AuthPage() {
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      placeholder="you@email.com"
+                      placeholder="email@example.com"
                       className="w-full rounded-2xl border bg-background pl-11 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
                     />
                   </div>
@@ -427,7 +428,7 @@ function AuthPage() {
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Create a password"
+                    placeholder="Create password"
                     className="w-full rounded-2xl border bg-background pl-11 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
                   />
                 </div>
@@ -436,7 +437,7 @@ function AuthPage() {
               {role === "groomer" && (
                 <div className="rounded-2xl bg-primary/10 p-3 text-xs text-primary flex items-start gap-2">
                   <CheckCircle2 className="h-4 w-4 shrink-0 mt-0.5" />
-                  <span>Your salon location will be automatically pinned on our interactive pet parent map!</span>
+                  <span>Your salon location will be automatically registered and visible on the pet parents map!</span>
                 </div>
               )}
 
@@ -448,7 +449,7 @@ function AuthPage() {
                     : "bg-accent text-accent-foreground"
                 }`}
               >
-                Create {role === "groomer" ? "Salon Partner" : "Pet Parent"} Account →
+                Register {role === "groomer" ? "Salon Partner" : "Pet Parent"} →
               </button>
             </form>
           )}

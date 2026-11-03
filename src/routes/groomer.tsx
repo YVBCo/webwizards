@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
@@ -8,21 +8,20 @@ import {
   MapPin,
   Phone,
   Camera,
-  Users,
   TrendingUp,
-  Droplets,
   Calendar,
-  AlertCircle,
   Plus,
-  Play,
   Check,
   X,
   Sparkles,
   Building,
   Radio,
-  Settings,
-  Shield,
+  Video,
+  VideoOff,
+  Disc,
+  Play,
   Eye,
+  Film,
 } from "lucide-react";
 import { SiteNav } from "@/components/SiteNav";
 import { Tilt } from "@/components/Tilt";
@@ -32,9 +31,9 @@ export const Route = createFileRoute("/groomer")({
   head: () => ({
     meta: [
       { title: "Grooming Center Salon Portal — Fur&Fern" },
-      { name: "description", content: "Manage live grooming stations, customer appointments, queue, and salon profile." },
+      { name: "description", content: "Manage live grooming stations, customer appointments, live webcam broadcast, and video recording." },
       { property: "og:title", content: "Grooming Center Salon Portal — Fur&Fern" },
-      { property: "og:description", content: "Manage live grooming stations, customer appointments, queue, and salon profile." },
+      { property: "og:description", content: "Manage live grooming stations, customer appointments, live webcam broadcast, and video recording." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -44,7 +43,6 @@ export const Route = createFileRoute("/groomer")({
 
 function GroomerDashboard() {
   const s = useStore();
-  const nav = useNavigate();
   const [filterTab, setFilterTab] = useState<"all" | "in-progress" | "upcoming" | "done">("all");
   const [selectedBookingId, setSelectedBookingId] = useState<string | null>("b-101");
   const [showAddWalkin, setShowAddWalkin] = useState(false);
@@ -52,17 +50,14 @@ function GroomerDashboard() {
   const [walkinPetName, setWalkinPetName] = useState("");
   const [walkinBreed, setWalkinBreed] = useState("");
   const [walkinPlan, setWalkinPlan] = useState("Splash");
-  const [activeStations, setActiveStations] = useState([
-    { id: 1, name: "Hydrotherapy Tub 01", pet: "Biscuit 🐶", status: "Occupied", groomer: "Sarah M." },
-    { id: 2, name: "Hydrotherapy Tub 02", pet: "None", status: "Available", groomer: "Vacant" },
-    { id: 3, name: "Master Styling Suite", pet: "Coco 🐩", status: "Occupied", groomer: "Dev K." },
-    { id: 4, name: "Gentle Drying Pod", pet: "None", status: "Sanitized", groomer: "Ready" },
-  ]);
+  
+  // Video Recording simulator state
+  const [isRecordingNow, setIsRecordingNow] = useState(false);
+  const [recSeconds, setRecSeconds] = useState(0);
 
   const shopName = s.currentUser?.shopName || "Fur&Fern Flagship Spa & Sanctuary";
   const shopArea = s.currentUser?.shopArea || "HSR Layout, Sector 2";
 
-  // Filter bookings
   const bookingsList = s.bookings.filter((b) => {
     if (filterTab === "all") return true;
     return b.status === filterTab;
@@ -98,9 +93,9 @@ function GroomerDashboard() {
     }));
 
     if (isReady) {
-      toast.success(`🎉 ${booking.petName || "Pet"} is ready for pickup! Customer notified via SMS.`);
+      toast.success(`🎉 ${booking.petName || "Pet"} is marked READY for pickup! Parent's dashboard notified.`);
     } else {
-      toast.success(`Advanced to stage: ${GROOMING_STEPS[nextStep]} 🫧`);
+      toast.success(`Advanced to stage: ${GROOMING_STEPS[nextStep]} 🫧 (Synced with Pet Parent)`);
     }
   };
 
@@ -110,6 +105,90 @@ function GroomerDashboard() {
       bookings: st.bookings.map((b) => (b.id === bookingId ? { ...b, status } : b)),
     }));
     toast.success(`Appointment status updated to ${status}`);
+  };
+
+  // Toggle Live Broadcast for Pet Parent
+  const toggleBroadcast = () => {
+    const nextState = !s.broadcast.isBroadcasting;
+    setState((st) => ({
+      ...st,
+      broadcast: {
+        ...st.broadcast,
+        isBroadcasting: nextState,
+        petInCam: activeBooking?.petName ? `${activeBooking.petName} ${activeBooking.petEmoji || "🐶"}` : "Biscuit 🐶",
+      },
+    }));
+    if (nextState) {
+      toast.success("🔴 Live broadcast turned ON! Pet parent can now watch stream in real time.");
+    } else {
+      toast.info("Broadcast paused. Stream standby screen shown to parent.");
+    }
+  };
+
+  // Switch camera angle
+  const switchCam = (cam: "Tub Cam 01" | "Styling Suite 02" | "Drying Bay 03") => {
+    setState((st) => ({
+      ...st,
+      broadcast: {
+        ...st.broadcast,
+        activeCam: cam,
+      },
+    }));
+    toast.success(`Switched live stream feed to ${cam}`);
+  };
+
+  // Record a Video Clip to send to Pet Parent
+  const triggerRecordVideo = () => {
+    if (!isRecordingNow) {
+      setIsRecordingNow(true);
+      setRecSeconds(1);
+      const timer = setInterval(() => {
+        setRecSeconds((prev) => {
+          if (prev >= 5) {
+            clearInterval(timer);
+            setIsRecordingNow(false);
+            // Save completed video clip
+            const newClip = {
+              id: `clip-${uid()}`,
+              title: `${activeBooking?.petName || "Pet"} — ${GROOMING_STEPS[activeBooking?.currentStep ?? 0]} Clip`,
+              duration: "0:45",
+              time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+              stage: GROOMING_STEPS[activeBooking?.currentStep ?? 0] ?? "Grooming",
+              thumbnailEmoji: activeBooking?.petEmoji || "🐶",
+            };
+            setState((st) => ({
+              ...st,
+              broadcast: {
+                ...st.broadcast,
+                recordedClips: [newClip, ...st.broadcast.recordedClips],
+              },
+            }));
+            toast.success(`🎬 Video clip recorded and pushed live to ${activeBooking?.customerName || "Pet Parent"}'s dashboard!`);
+            return 0;
+          }
+          return prev + 1;
+        });
+      }, 1000);
+    }
+  };
+
+  // Snap photo to push to parent
+  const sendLiveSnapshot = () => {
+    const newSnap = {
+      id: `snap-${uid()}`,
+      title: `${activeBooking?.petName || "Pet"} Studio Snap`,
+      time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      emoji: activeBooking?.petEmoji || "📸",
+      stage: GROOMING_STEPS[activeBooking?.currentStep ?? 0] ?? "Grooming",
+    };
+    setState((st) => ({
+      ...st,
+      broadcast: {
+        ...st.broadcast,
+        liveSnapshots: [newSnap, ...st.broadcast.liveSnapshots],
+      },
+    }));
+    toast.success(`📸 Live photo captured & synced to pet parent's album!`);
   };
 
   const handleAddWalkin = (e: React.FormEvent) => {
@@ -166,7 +245,7 @@ function GroomerDashboard() {
               <div className="flex items-center gap-2">
                 <h1 className="text-3xl md:text-4xl font-black">{shopName}</h1>
                 <span className="rounded-full bg-mint px-3 py-0.5 text-xs font-bold text-primary">
-                  Verified Partner ✓
+                  Verified Salon ✓
                 </span>
               </div>
               <p className="text-sm opacity-85 flex items-center gap-1.5 mt-1">
@@ -180,7 +259,7 @@ function GroomerDashboard() {
               to="/locations"
               className="inline-flex items-center gap-1.5 rounded-full bg-primary-foreground/15 px-4 py-2.5 text-xs font-bold text-primary-foreground transition hover:bg-primary-foreground/25"
             >
-              <Eye className="h-3.5 w-3.5" /> View on Pet Map
+              <Eye className="h-3.5 w-3.5" /> Check Map Pin
             </Link>
             <button
               onClick={() => setShowAddWalkin(!showAddWalkin)}
@@ -225,7 +304,7 @@ function GroomerDashboard() {
                 <input
                   value={walkinBreed}
                   onChange={(e) => setWalkinBreed(e.target.value)}
-                  placeholder="e.g. Cocker Spaniel"
+                  placeholder="e.g. Beagle"
                   className="w-full rounded-xl border bg-background px-3 py-2 text-sm"
                 />
               </div>
@@ -289,11 +368,17 @@ function GroomerDashboard() {
           <Tilt>
             <div className="rounded-3xl bg-coral p-6 text-accent-foreground shadow-3d h-full">
               <div className="flex items-center justify-between">
-                <Calendar className="h-6 w-6" />
-                <span className="text-xs font-bold bg-accent-foreground/20 px-2 py-0.5 rounded-full">Queue</span>
+                <Video className="h-6 w-6" />
+                <span className="text-xs font-bold bg-accent-foreground/20 px-2 py-0.5 rounded-full">
+                  {s.broadcast.isBroadcasting ? "ON AIR" : "OFFLINE"}
+                </span>
               </div>
-              <p className="mt-4 font-display text-4xl font-black">{s.bookings.length}</p>
-              <p className="text-xs opacity-90 font-semibold mt-1">Total Scheduled</p>
+              <p className="mt-4 font-display text-4xl font-black">
+                {s.broadcast.isBroadcasting ? "LIVE" : "PAUSED"}
+              </p>
+              <p className="text-xs opacity-90 font-semibold mt-1">
+                Camera: {s.broadcast.activeCam}
+              </p>
             </div>
           </Tilt>
 
@@ -301,14 +386,131 @@ function GroomerDashboard() {
             <div className="rounded-3xl bg-card p-6 shadow-3d border border-border h-full">
               <div className="flex items-center justify-between">
                 <CheckCircle2 className="h-6 w-6 text-primary" />
-                <span className="text-xs font-bold bg-muted px-2 py-0.5 rounded-full">Completed</span>
+                <span className="text-xs font-bold bg-muted px-2 py-0.5 rounded-full">Total</span>
               </div>
-              <p className="mt-4 font-display text-4xl font-black">
-                {s.bookings.filter((b) => b.status === "done").length}
-              </p>
-              <p className="text-xs text-muted-foreground font-semibold mt-1">Happy Tails Picked Up</p>
+              <p className="mt-4 font-display text-4xl font-black">{s.bookings.length}</p>
+              <p className="text-xs text-muted-foreground font-semibold mt-1">Total Scheduled</p>
             </div>
           </Tilt>
+        </div>
+
+        {/* ================= SPECIAL FEATURE: GROOMER LIVE WEBCAM & VIDEO RECORDER ================= */}
+        <div className="mt-8 rounded-3xl bg-card p-8 shadow-3d border-2 border-primary/20">
+          <div className="flex flex-wrap items-center justify-between gap-4 border-b pb-5">
+            <div>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-accent/15 px-3 py-1 text-xs font-bold text-accent mb-1">
+                <Video className="h-3.5 w-3.5" /> Groomer Camera Studio & Broadcast
+              </span>
+              <h2 className="text-2xl font-black">Studio Cam Live Feed Control</h2>
+              <p className="text-xs text-muted-foreground">
+                Control the live stream broadcasted directly into the Pet Parent's dashboard.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3">
+              {/* Broadcast Toggle */}
+              <button
+                onClick={toggleBroadcast}
+                className={`inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-xs font-bold shadow-md transition hover:scale-105 active:scale-95 ${
+                  s.broadcast.isBroadcasting
+                    ? "bg-destructive text-destructive-foreground animate-pulse"
+                    : "bg-muted text-foreground hover:bg-secondary"
+                }`}
+              >
+                {s.broadcast.isBroadcasting ? (
+                  <>
+                    <Radio className="h-4 w-4" /> Stop Live Broadcast
+                  </>
+                ) : (
+                  <>
+                    <Play className="h-4 w-4" /> Start Live Broadcast 🔴
+                  </>
+                )}
+              </button>
+
+              {/* Record Video Button */}
+              <button
+                onClick={triggerRecordVideo}
+                disabled={isRecordingNow}
+                className={`inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-xs font-bold shadow-md transition hover:scale-105 active:scale-95 ${
+                  isRecordingNow
+                    ? "bg-red-600 text-white animate-pulse"
+                    : "bg-primary text-primary-foreground"
+                }`}
+              >
+                <Disc className="h-4 w-4" />
+                {isRecordingNow ? `Recording REC (00:0${recSeconds})...` : "Record Video Clip 📹"}
+              </button>
+
+              {/* Snap Photo */}
+              <button
+                onClick={sendLiveSnapshot}
+                className="inline-flex items-center gap-1.5 rounded-full bg-accent px-4 py-2.5 text-xs font-bold text-accent-foreground shadow-md transition hover:scale-105 active:scale-95"
+              >
+                <Camera className="h-3.5 w-3.5" /> Send Snap to Parent 📸
+              </button>
+            </div>
+          </div>
+
+          {/* Camera View & Switcher */}
+          <div className="mt-6 grid gap-6 md:grid-cols-12 items-center">
+            {/* Simulated Groomer Camera View (8 Cols) */}
+            <div className="md:col-span-8 relative aspect-video w-full rounded-2xl bg-neutral-950 overflow-hidden shadow-inner flex flex-col justify-between p-5 text-white">
+              {/* Top Stream Status Bar */}
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-mono bg-black/60 px-2.5 py-1 rounded-lg flex items-center gap-2">
+                  <span className={`h-2.5 w-2.5 rounded-full ${s.broadcast.isBroadcasting ? "bg-red-500 animate-pulse" : "bg-neutral-500"}`} />
+                  {s.broadcast.isBroadcasting ? "ON AIR TO PARENT" : "STANDBY"} // {s.broadcast.activeCam}
+                </span>
+                <span className="font-mono bg-black/60 px-2.5 py-1 rounded-lg">1080p 60FPS</span>
+              </div>
+
+              {/* Center Feed Content */}
+              <div className="flex flex-col items-center justify-center text-center">
+                <div className="text-8xl animate-bounce">
+                  {activeBooking?.petEmoji || "🐶"}
+                </div>
+                <div className="mt-3 bg-black/70 backdrop-blur px-4 py-1.5 rounded-full text-xs font-bold">
+                  Subject: {activeBooking?.petName || "Pet"} ({activeBooking?.petBreed || "Breed"}) · Current Stage: {GROOMING_STEPS[activeBooking?.currentStep ?? 0]}
+                </div>
+              </div>
+
+              {/* Bottom Stream Status */}
+              <div className="flex items-center justify-between text-xs opacity-80">
+                <span>Station Lead: {s.currentUser?.name || "Master Groomer"}</span>
+                <span>Parent Viewing Status: Connected 📱</span>
+              </div>
+            </div>
+
+            {/* Camera Controls & Switcher (4 Cols) */}
+            <div className="md:col-span-4 space-y-3">
+              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Select Active Camera Angle:</p>
+              {(["Tub Cam 01", "Styling Suite 02", "Drying Bay 03"] as const).map((cam) => {
+                const isActive = s.broadcast.activeCam === cam;
+                return (
+                  <button
+                    key={cam}
+                    onClick={() => switchCam(cam)}
+                    className={`w-full rounded-2xl p-3.5 text-left text-xs font-bold border-2 transition-all flex items-center justify-between ${
+                      isActive
+                        ? "border-accent bg-accent/15 text-accent shadow-sm"
+                        : "border-border bg-card text-muted-foreground hover:bg-secondary"
+                    }`}
+                  >
+                    <span>📹 {cam}</span>
+                    {isActive && <span className="text-[10px] bg-accent text-accent-foreground px-2 py-0.5 rounded-full">Active</span>}
+                  </button>
+                );
+              })}
+
+              <div className="rounded-2xl bg-secondary/80 p-3.5 text-xs text-muted-foreground border">
+                <p className="font-bold text-foreground">💡 Two-Way Sync Active:</p>
+                <p className="mt-1">
+                  When you record clips or snap photos here, they are pushed immediately to the parent's gallery below.
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Main Operational Split */}
@@ -519,29 +721,34 @@ function GroomerDashboard() {
             </div>
           </div>
 
-          {/* RIGHT COLUMN: Salon Stations & Quick Profile */}
+          {/* RIGHT COLUMN: Recorded Clips by Salon & Storefront Info */}
           <div className="space-y-8">
-            {/* Salon Station Status Pod */}
+            {/* Recorded Video Clips Library */}
             <div className="rounded-3xl bg-card p-6 shadow-3d border border-border">
-              <h3 className="text-xl font-bold mb-4">Grooming Station Status</h3>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <Film className="h-5 w-5 text-accent" />
+                  <h3 className="text-lg font-bold">Recorded Video Clips ({s.broadcast.recordedClips.length})</h3>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground mb-4">
+                These recorded highlights are pushed directly into the pet parent's mobile viewer.
+              </p>
+
               <div className="space-y-3">
-                {activeStations.map((station) => (
-                  <div key={station.id} className="rounded-2xl bg-secondary/80 p-3.5 text-xs border border-border/50">
+                {s.broadcast.recordedClips.map((clip) => (
+                  <div key={clip.id} className="rounded-2xl bg-secondary/80 p-3.5 text-xs border border-border/50">
                     <div className="flex items-center justify-between font-bold">
-                      <span>{station.name}</span>
-                      <span
-                        className={`rounded-full px-2 py-0.5 text-[10px] ${
-                          station.status === "Occupied"
-                            ? "bg-coral text-accent-foreground"
-                            : "bg-mint text-primary"
-                        }`}
-                      >
-                        {station.status}
+                      <span className="flex items-center gap-1.5">
+                        <span className="text-lg">{clip.thumbnailEmoji}</span> {clip.title}
+                      </span>
+                      <span className="rounded-full bg-accent text-accent-foreground px-2 py-0.5 text-[10px]">
+                        {clip.duration}
                       </span>
                     </div>
-                    <div className="mt-2 flex justify-between text-muted-foreground">
-                      <span>Occupant: <strong className="text-foreground">{station.pet}</strong></span>
-                      <span>Assigned: {station.groomer}</span>
+                    <div className="mt-2 flex justify-between text-muted-foreground text-[11px]">
+                      <span>Stage: {clip.stage}</span>
+                      <span>Recorded: {clip.time}</span>
                     </div>
                   </div>
                 ))}
